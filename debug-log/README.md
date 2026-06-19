@@ -17,3 +17,4 @@ Each entry uses this format:
 | BUG-003 | Public link fails with Cloudflare error 1033 | Jesse | Fixed |
 | BUG-004 | Ships could be placed more than once (duplicates) | Jesse | Fixed |
 | CHANGE-001 | Per-ship rotate icon (replaces ORIENT button) | Jesse | Done |
+| CHANGE-002 | Rotate icon supports full 360° (4 directions) | Jesse | Done |

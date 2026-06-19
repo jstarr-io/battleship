@@ -206,6 +206,8 @@ export class BattleshipUI {
         }
         sfxClick();
         this._commitShip(ship, cells);
+        ship.pivot = { r, c };
+        ship.facing = this.placement.orientation === 'H' ? 0 : 1;
         this._clearPreview();
         this._renderFleetList();
         this._renderShipIcons();
@@ -265,8 +267,8 @@ export class BattleshipUI {
     if (this.placed) return;
     this.placement.ships.forEach((ship) => {
       if (!ship.placed) return;
-      const anchor = this._shipAnchor(ship);
-      const cell = this.own.at(anchor.r, anchor.c);
+      const pivot = ship.pivot || this._shipAnchor(ship);
+      const cell = this.own.at(pivot.r, pivot.c);
       const btn = document.createElement('button');
       btn.className = 'ship-rotate';
       btn.type = 'button';
@@ -276,28 +278,47 @@ export class BattleshipUI {
       btn.addEventListener('mousedown', stop);
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this._flipShip(ship);
+        this._rotateShip(ship);
       });
       cell.appendChild(btn);
     });
   }
 
-  _flipShip(ship) {
-    const anchor = this._shipAnchor(ship);
-    const horiz = this._shipOrient(ship) === 'H';
+  // Ship cells laid out from a fixed pivot in one of 4 directions.
+  // facing: 0=East (right), 1=South (down), 2=West (left), 3=North (up).
+  _cellsFrom(pivot, facing, size) {
+    const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+    const [dr, dc] = dirs[facing];
     const cells = [];
-    for (let i = 0; i < ship.size; i++) {
-      cells.push(horiz ? { r: anchor.r + i, c: anchor.c } : { r: anchor.r, c: anchor.c + i });
+    for (let i = 0; i < size; i++) cells.push({ r: pivot.r + dr * i, c: pivot.c + dc * i });
+    return cells;
+  }
+
+  _shipFacing(ship) {
+    if (ship.facing != null) return ship.facing;
+    return this._shipOrient(ship) === 'H' ? 0 : 1;
+  }
+
+  // Rotate around the ship's pivot to the next orientation that fits,
+  // cycling right -> down -> left -> up and skipping invalid ones.
+  _rotateShip(ship) {
+    const pivot = ship.pivot || this._shipAnchor(ship);
+    const cur = this._shipFacing(ship);
+    for (let k = 1; k <= 3; k++) {
+      const facing = (cur + k) % 4;
+      const cells = this._cellsFrom(pivot, facing, ship.size);
+      if (this._valid(cells, ship.name)) {
+        sfxClick();
+        this._removeShipCells(ship);
+        this._commitShip(ship, cells);
+        ship.pivot = pivot;
+        ship.facing = facing;
+        this._renderShipIcons();
+        this._setMsg(`${ship.name} rotated.`);
+        return;
+      }
     }
-    if (!this._valid(cells, ship.name)) {
-      this._setMsg(`Can't rotate ${ship.name} there — it would go off-board or overlap.`, true);
-      return;
-    }
-    sfxClick();
-    this._removeShipCells(ship);
-    this._commitShip(ship, cells);
-    this._renderShipIcons();
-    this._setMsg(`${ship.name} rotated.`);
+    this._setMsg(`Can't rotate ${ship.name} — no room without going off-board or overlapping.`, true);
   }
 
   _startDrag(name, gr, gc) {
@@ -330,6 +351,8 @@ export class BattleshipUI {
       if (this._valid(cells, ship.name)) {
         this._removeShipCells(ship);
         this._commitShip(ship, cells);
+        ship.pivot = this._shipAnchor(ship);
+        ship.facing = this._shipOrient(ship) === 'H' ? 0 : 1;
         this._renderShipIcons();
         sfxClick();
         this._setMsg(this._allPlaced() ? 'Fleet ready. Press READY FOR BATTLE.' : 'Ship moved.');
@@ -363,6 +386,8 @@ export class BattleshipUI {
     this.placement.ships.forEach((s) => {
       s.placed = false;
       s.cells = [];
+      s.pivot = null;
+      s.facing = null;
     });
     this.placement.activeIndex = 0;
     this.own.cells.forEach((c) => {
@@ -399,6 +424,8 @@ export class BattleshipUI {
         if (ok) {
           ship.placed = true;
           ship.cells = cells;
+          ship.pivot = { r, c };
+          ship.facing = horiz ? 0 : 1;
           cells.forEach(({ r: rr, c: cc }) => {
             occ.set(`${rr},${cc}`, ship.name);
             const el = this.own.at(rr, cc);
