@@ -6,7 +6,9 @@ import { playAnthem, stopAnthem } from './audio.js';
 
 function flagImage(country) {
   return new Promise((resolve) => {
-    const markup = flagHTML(country);
+    // Give the SVG an explicit size so the canvas has a well-defined intrinsic
+    // resolution to sample from (otherwise only the top-left corner is read).
+    const markup = flagHTML(country).replace('<svg ', '<svg width="240" height="160" ');
     const blob = new Blob([markup], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const img = new Image();
@@ -147,6 +149,8 @@ function drawShip(ctx, x, y, tilt, flag, alpha, sinking, t = 0) {
     const fw = 54;
     const fh = 36;
     const wave = sinking ? 0 : Math.sin(t * 6) * 4;
+    const srcW = flag.naturalWidth || flag.width || 240;
+    const srcH = flag.naturalHeight || flag.height || 160;
     ctx.save();
     ctx.translate(2, -78);
     // waving flag: slice into vertical strips offset by a sine wave
@@ -154,7 +158,11 @@ function drawShip(ctx, x, y, tilt, flag, alpha, sinking, t = 0) {
     for (let i = 0; i < strips; i++) {
       const sx = (fw / strips) * i;
       const off = Math.sin(t * 6 + i * 0.6) * (sinking ? 0 : 3);
-      ctx.drawImage(flag, (60 / strips) * i, 0, 60 / strips, 40, sx, off + wave * (i / strips), fw / strips + 0.5, fh);
+      ctx.drawImage(
+        flag,
+        (srcW / strips) * i, 0, srcW / strips, srcH,
+        sx, off + wave * (i / strips), fw / strips + 0.5, fh
+      );
     }
     ctx.restore();
   }

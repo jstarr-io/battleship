@@ -18,3 +18,4 @@ Each entry uses this format:
 | BUG-004 | Ships could be placed more than once (duplicates) | Jesse | Fixed |
 | CHANGE-001 | Per-ship rotate icon (replaces ORIENT button) | Jesse | Done |
 | CHANGE-002 | Rotate icon supports full 360° (4 directions) | Jesse | Done |
+| BUG-005 | Game-over flag shows only base color (no emblem) | Jesse | Fixed |
