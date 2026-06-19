@@ -53,6 +53,7 @@ export class BattleshipUI {
     this.shipDefs = [];
     this.reset();
     this._wireControls();
+    this._wireDragListeners();
   }
 
   reset() {
@@ -89,17 +90,11 @@ export class BattleshipUI {
     this.placement.activeIndex = 0;
     this._renderFleetList();
     document.getElementById('placement-panel').classList.remove('hidden');
-    this._setMsg('Place your fleet. Click a cell to drop the highlighted ship.');
+    this._setMsg('Place your fleet — click to drop, drag to move, ⟳ to rotate.');
     this._updateReadyBtn();
   }
 
   _wireControls() {
-    document.getElementById('btn-orient').addEventListener('click', () => {
-      sfxClick();
-      this.placement.orientation = this.placement.orientation === 'H' ? 'V' : 'H';
-      document.getElementById('btn-orient').textContent =
-        'ORIENT: ' + (this.placement.orientation === 'H' ? 'HORIZONTAL' : 'VERTICAL');
-    });
     document.getElementById('btn-random').addEventListener('click', () => {
       sfxClick();
       this._randomize();
@@ -126,6 +121,7 @@ export class BattleshipUI {
         s.size
       )}</span>`;
       el.addEventListener('click', () => {
+        if (s.placed) return; // placed ships are repositioned by dragging
         sfxClick();
         this.placement.activeIndex = i;
         this._renderFleetList();
@@ -134,13 +130,17 @@ export class BattleshipUI {
     });
   }
 
+  // The ship currently queued for placement, or null if all are placed.
   _activeShip() {
     const p = this.placement;
-    if (!p.ships[p.activeIndex] || p.ships[p.activeIndex].placed) {
-      const next = p.ships.findIndex((s) => !s.placed);
-      if (next >= 0) p.activeIndex = next;
+    const cur = p.ships[p.activeIndex];
+    if (cur && !cur.placed) return cur;
+    const next = p.ships.findIndex((s) => !s.placed);
+    if (next >= 0) {
+      p.activeIndex = next;
+      return p.ships[next];
     }
-    return p.ships[p.activeIndex];
+    return null;
   }
 
   _cellsFor(ship, r, c) {
@@ -163,51 +163,187 @@ export class BattleshipUI {
   }
 
   _wireOwnHover() {
+    this.drag = null;
+    this._hoverCell = null;
     this.own.cells.forEach((cl) => {
+      const r = +cl.dataset.r;
+      const c = +cl.dataset.c;
+
       cl.addEventListener('mouseenter', () => {
         if (this.placed) return;
+        this._hoverCell = { r, c };
+        if (this.drag) {
+          this._previewCells(this._dragCells(r, c), this.drag.ship.name);
+          return;
+        }
         const ship = this._activeShip();
-        if (!ship) return;
-        const r = +cl.dataset.r;
-        const c = +cl.dataset.c;
-        const cells = this._cellsFor(ship, r, c);
-        const ok = this._valid(cells);
-        this._clearPreview();
-        cells.forEach(({ r: rr, c: cc }) => {
-          if (rr < 0 || rr >= SIZE || cc < 0 || cc >= SIZE) return;
-          const el = this.own.at(rr, cc);
-          el.classList.add(ok ? 'preview-ok' : 'preview-bad');
-        });
+        if (!ship) {
+          this._clearPreview();
+          return;
+        }
+        this._previewCells(this._cellsFor(ship, r, c));
       });
-      cl.addEventListener('click', () => {
+
+      // Begin dragging an already-placed ship to reposition it.
+      cl.addEventListener('mousedown', (e) => {
         if (this.placed) return;
+        const name = cl.dataset.ship;
+        if (!name) return;
+        e.preventDefault();
+        this._startDrag(name, r, c);
+      });
+
+      // Click an empty cell to drop the queued (unplaced) ship.
+      cl.addEventListener('click', () => {
+        if (this.placed || this.drag) return;
+        if (cl.dataset.ship) return; // occupied cell: not a placement target
         const ship = this._activeShip();
         if (!ship) return;
-        const r = +cl.dataset.r;
-        const c = +cl.dataset.c;
         const cells = this._cellsFor(ship, r, c);
         if (!this._valid(cells)) {
           this._setMsg('Invalid spot — keep ships on the grid and unstacked.', true);
           return;
         }
         sfxClick();
-        ship.placed = true;
-        ship.cells = cells;
-        cells.forEach(({ r: rr, c: cc }) => {
-          this.placement.occupied.set(`${rr},${cc}`, ship.name);
-          const el = this.own.at(rr, cc);
-          el.classList.add('ship');
-          el.dataset.ship = ship.name;
-        });
+        this._commitShip(ship, cells);
         this._clearPreview();
         this._renderFleetList();
+        this._renderShipIcons();
         this._updateReadyBtn();
-        if (this._allPlaced()) {
-          this._setMsg('Fleet ready. Press READY FOR BATTLE.');
-        }
+        if (this._allPlaced()) this._setMsg('Fleet ready. Press READY FOR BATTLE.');
       });
     });
-    this.own.host.addEventListener('mouseleave', () => this._clearPreview());
+
+    this.own.host.addEventListener('mouseleave', () => {
+      this._hoverCell = null;
+      if (!this.drag) this._clearPreview();
+    });
+  }
+
+  _previewCells(cells, ignoreName = null) {
+    const ok = this._valid(cells, ignoreName);
+    this._clearPreview();
+    cells.forEach(({ r, c }) => {
+      if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) return;
+      this.own.at(r, c).classList.add(ok ? 'preview-ok' : 'preview-bad');
+    });
+  }
+
+  // Place ship cells onto the board + occupancy map.
+  _commitShip(ship, cells) {
+    ship.placed = true;
+    ship.cells = cells;
+    cells.forEach(({ r, c }) => {
+      this.placement.occupied.set(`${r},${c}`, ship.name);
+      const el = this.own.at(r, c);
+      el.classList.add('ship');
+      el.dataset.ship = ship.name;
+    });
+  }
+
+  _removeShipCells(ship) {
+    ship.cells.forEach(({ r, c }) => {
+      this.placement.occupied.delete(`${r},${c}`);
+      const el = this.own.at(r, c);
+      el.classList.remove('ship');
+      delete el.dataset.ship;
+    });
+  }
+
+  _shipOrient(ship) {
+    return ship.cells.length < 2 || ship.cells[0].r === ship.cells[1].r ? 'H' : 'V';
+  }
+
+  // Top/left-most cell of a ship — the pivot used for rotation.
+  _shipAnchor(ship) {
+    return [...ship.cells].sort((a, b) => a.r - b.r || a.c - b.c)[0];
+  }
+
+  // Persistent rotate (⟳) icons on each placed ship, shown only during setup.
+  _renderShipIcons() {
+    this.own.host.querySelectorAll('.ship-rotate').forEach((b) => b.remove());
+    if (this.placed) return;
+    this.placement.ships.forEach((ship) => {
+      if (!ship.placed) return;
+      const anchor = this._shipAnchor(ship);
+      const cell = this.own.at(anchor.r, anchor.c);
+      const btn = document.createElement('button');
+      btn.className = 'ship-rotate';
+      btn.type = 'button';
+      btn.title = `Rotate ${ship.name}`;
+      btn.textContent = '⟳';
+      const stop = (e) => e.stopPropagation();
+      btn.addEventListener('mousedown', stop);
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._flipShip(ship);
+      });
+      cell.appendChild(btn);
+    });
+  }
+
+  _flipShip(ship) {
+    const anchor = this._shipAnchor(ship);
+    const horiz = this._shipOrient(ship) === 'H';
+    const cells = [];
+    for (let i = 0; i < ship.size; i++) {
+      cells.push(horiz ? { r: anchor.r + i, c: anchor.c } : { r: anchor.r, c: anchor.c + i });
+    }
+    if (!this._valid(cells, ship.name)) {
+      this._setMsg(`Can't rotate ${ship.name} there — it would go off-board or overlap.`, true);
+      return;
+    }
+    sfxClick();
+    this._removeShipCells(ship);
+    this._commitShip(ship, cells);
+    this._renderShipIcons();
+    this._setMsg(`${ship.name} rotated.`);
+  }
+
+  _startDrag(name, gr, gc) {
+    const ship = this.placement.ships.find((s) => s.name === name);
+    if (!ship || !ship.placed) return;
+    const orient = this._shipOrient(ship);
+    const sorted = [...ship.cells].sort((a, b) => (orient === 'H' ? a.c - b.c : a.r - b.r));
+    const offset = sorted.findIndex((cell) => cell.r === gr && cell.c === gc);
+    this.drag = { ship, orient, offset: offset < 0 ? 0 : offset };
+    this._setMsg(`Repositioning ${ship.name} — release over a valid spot.`);
+    this._previewCells(this._dragCells(gr, gc), ship.name);
+  }
+
+  _dragCells(r, c) {
+    const { ship, orient, offset } = this.drag;
+    const cells = [];
+    for (let i = 0; i < ship.size; i++) {
+      if (orient === 'H') cells.push({ r, c: c - offset + i });
+      else cells.push({ r: r - offset + i, c });
+    }
+    return cells;
+  }
+
+  _endDrag() {
+    if (!this.drag) return;
+    const { ship } = this.drag;
+    const hover = this._hoverCell;
+    if (hover) {
+      const cells = this._dragCells(hover.r, hover.c);
+      if (this._valid(cells, ship.name)) {
+        this._removeShipCells(ship);
+        this._commitShip(ship, cells);
+        this._renderShipIcons();
+        sfxClick();
+        this._setMsg(this._allPlaced() ? 'Fleet ready. Press READY FOR BATTLE.' : 'Ship moved.');
+      } else {
+        this._setMsg('Could not move there — kept the ship in place.', true);
+      }
+    }
+    this.drag = null;
+    this._clearPreview();
+  }
+
+  _wireDragListeners() {
+    // Released anywhere (incl. off-grid) ends an in-progress drag.
+    document.addEventListener('mouseup', () => this._endDrag());
   }
 
   _clearPreview() {
@@ -234,6 +370,7 @@ export class BattleshipUI {
       delete c.dataset.ship;
     });
     this._renderFleetList();
+    this._renderShipIcons();
     this._updateReadyBtn();
     this._setMsg('Cleared. Place your fleet again.');
   }
@@ -273,12 +410,14 @@ export class BattleshipUI {
       }
     }
     this._renderFleetList();
+    this._renderShipIcons();
     this._updateReadyBtn();
     this._setMsg('Fleet randomized. Adjust or press READY FOR BATTLE.');
   }
 
   onPlaceAccepted() {
     this.placed = true;
+    this._renderShipIcons(); // removes rotate icons now that ships are locked
     document.querySelectorAll('#placement-panel .placement-controls .btn').forEach((b) => (b.disabled = true));
     this._setMsg('Fleet locked in. Awaiting the enemy…');
   }

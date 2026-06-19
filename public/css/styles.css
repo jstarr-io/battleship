@@ -184,7 +184,17 @@ html, body {
 .grid-host.armed .grid-cell:not(.hit):not(.miss):hover {
   background: #1c4350; cursor: crosshair; outline: 1px solid var(--gold);
 }
-.grid-cell.ship { background: linear-gradient(180deg, #4a525a, #353c43); border-color: #5a636b; }
+.grid-cell.ship { background: linear-gradient(180deg, #4a525a, #353c43); border-color: #5a636b; cursor: grab; }
+.grid-cell.ship:active { cursor: grabbing; }
+.ship-rotate {
+  position: absolute; top: -7px; right: -7px; z-index: 5;
+  width: 18px; height: 18px; padding: 0; line-height: 16px;
+  font-size: 12px; text-align: center; cursor: pointer;
+  border-radius: 50%; border: 1px solid var(--gold);
+  background: #11202a; color: var(--gold);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.ship-rotate:hover { background: var(--gold); color: #11202a; }
 .grid-cell.preview-ok { background: rgba(76,175,114,0.5); outline: 1px solid var(--ok); }
 .grid-cell.preview-bad { background: rgba(192,57,43,0.5); outline: 1px solid var(--red); }
 .grid-cell.hit { background: radial-gradient(circle, #7a2218, #3a1410); }

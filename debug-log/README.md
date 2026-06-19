@@ -15,3 +15,5 @@ Each entry uses this format:
 | BUG-001 | Entry "Who is this?" question never appears | Devin testing | Fixed |
 | BUG-002 | Commander name clipped in game header | Devin testing | Fixed |
 | BUG-003 | Public link fails with Cloudflare error 1033 | Jesse | Fixed |
+| BUG-004 | Ships could be placed more than once (duplicates) | Jesse | Fixed |
+| CHANGE-001 | Per-ship rotate icon (replaces ORIENT button) | Jesse | Done |
