@@ -19,3 +19,4 @@ Each entry uses this format:
 | CHANGE-001 | Per-ship rotate icon (replaces ORIENT button) | Jesse | Done |
 | CHANGE-002 | Rotate icon supports full 360° (4 directions) | Jesse | Done |
 | BUG-005 | Game-over flag shows only base color (no emblem) | Jesse | Fixed |
+| BUG-006 | "Play Online" stuck in queue forever (added A.I. fallback) | Jesse | Fixed |

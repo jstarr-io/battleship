@@ -1,3 +1,9 @@
 node_modules/
 *.log
 .DS_Store
+
+# tunnel binary (downloaded at runtime, not source)
+cloudflared
+
+# dev-only preview harnesses
+public/_*.html

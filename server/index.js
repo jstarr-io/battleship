@@ -23,9 +23,23 @@ let gameCounter = 0;
 
 const AI_ID = '__AI__';
 const AI_NAME = 'Admiral A.I.';
+// If no human opponent joins within this window, match the waiting player
+// against the A.I. so nobody is ever stuck in the queue.
+const MATCH_TIMEOUT_MS = 8000;
 
 function newGameId() {
   return `g${++gameCounter}`;
+}
+
+function clearWaiting() {
+  if (waitingPlayer && waitingPlayer.timer) clearTimeout(waitingPlayer.timer);
+  waitingPlayer = null;
+}
+
+function startAIGame(human) {
+  const aiCountry = pickAICountry(human.country);
+  const ai = { socket: null, socketId: AI_ID, country: aiCountry, name: AI_NAME };
+  startGame(human, ai, new AIBrain());
 }
 
 function publicShipList() {
@@ -117,6 +131,7 @@ function maybeRunAI(record) {
       c: result.c,
       hit: result.hit,
       sunk: result.sunk,
+      sunkCells: result.sunkCells,
       label: result.label,
     });
 
@@ -135,16 +150,25 @@ io.on('connection', (socket) => {
     country = String(country || 'Unknown').slice(0, 40);
     name = String(name || 'Anonymous').slice(0, 24);
 
-    if (waitingPlayer && waitingPlayer.socket.connected) {
+    if (waitingPlayer && waitingPlayer.socket.connected && waitingPlayer.socket.id !== socket.id) {
       const p1 = waitingPlayer;
-      waitingPlayer = null;
+      clearWaiting();
       const p2 = { socket, socketId: socket.id, country, name };
       startGame(
         { socket: p1.socket, socketId: p1.socket.id, country: p1.country, name: p1.name },
         p2
       );
     } else {
-      waitingPlayer = { socket, socketId: socket.id, country, name };
+      clearWaiting();
+      const human = { socket, socketId: socket.id, country, name };
+      const timer = setTimeout(() => {
+        // Still waiting and connected after the window -> give them an A.I. match.
+        if (waitingPlayer && waitingPlayer.socket.id === socket.id) {
+          waitingPlayer = null;
+          if (socket.connected) startAIGame(human);
+        }
+      }, MATCH_TIMEOUT_MS);
+      waitingPlayer = { socket, socketId: socket.id, country, name, timer };
       socket.emit('waiting');
     }
   });
@@ -152,10 +176,7 @@ io.on('connection', (socket) => {
   socket.on('playAI', ({ country, name }) => {
     country = String(country || 'Unknown').slice(0, 40);
     name = String(name || 'Anonymous').slice(0, 24);
-    const human = { socket, socketId: socket.id, country, name };
-    const aiCountry = pickAICountry(country);
-    const ai = { socket: null, socketId: AI_ID, country: aiCountry, name: AI_NAME };
-    startGame(human, ai, new AIBrain());
+    startAIGame({ socket, socketId: socket.id, country, name });
   });
 
   socket.on('placeShips', ({ ships }) => {
@@ -195,6 +216,7 @@ io.on('connection', (socket) => {
       c: result.c,
       hit: result.hit,
       sunk: result.sunk,
+      sunkCells: result.sunkCells,
       label: result.label,
     });
     // Tell opponent (if human) they were fired upon.
@@ -205,6 +227,7 @@ io.on('connection', (socket) => {
         c: result.c,
         hit: result.hit,
         sunk: result.sunk,
+        sunkCells: result.sunkCells,
         label: result.label,
       });
     }
@@ -218,13 +241,13 @@ io.on('connection', (socket) => {
 
   socket.on('cancelSearch', () => {
     if (waitingPlayer && waitingPlayer.socket.id === socket.id) {
-      waitingPlayer = null;
+      clearWaiting();
     }
   });
 
   socket.on('disconnect', () => {
     if (waitingPlayer && waitingPlayer.socket.id === socket.id) {
-      waitingPlayer = null;
+      clearWaiting();
     }
     const record = games.get(socket.data.gameId);
     if (record) {
