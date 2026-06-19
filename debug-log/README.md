@@ -20,3 +20,6 @@ Each entry uses this format:
 | CHANGE-002 | Rotate icon supports full 360° (4 directions) | Jesse | Done |
 | BUG-005 | Game-over flag shows only base color (no emblem) | Jesse | Fixed |
 | BUG-006 | "Play Online" stuck in queue forever (added A.I. fallback) | Jesse | Fixed |
+| CHANGE-003 | Whole-ship dynamite explosion on sink (bigger boom) | Jesse | Done |
+| BUG-007 | National anthem couldn't be stopped (stopAnthem no-op) | Devin Review | Fixed |
+| BUG-008 | Placement control listeners accumulate across games | Devin Review | Fixed |

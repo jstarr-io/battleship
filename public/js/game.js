@@ -95,15 +95,23 @@ export class BattleshipUI {
   }
 
   _wireControls() {
-    document.getElementById('btn-random').addEventListener('click', () => {
+    // A fresh BattleshipUI is built per game while these buttons persist in the
+    // DOM, so replace each node first to drop listeners bound to prior instances.
+    const rebind = (id, handler) => {
+      const old = document.getElementById(id);
+      const fresh = old.cloneNode(true);
+      old.parentNode.replaceChild(fresh, old);
+      fresh.addEventListener('click', handler);
+    };
+    rebind('btn-random', () => {
       sfxClick();
       this._randomize();
     });
-    document.getElementById('btn-reset').addEventListener('click', () => {
+    rebind('btn-reset', () => {
       sfxClick();
       this._resetPlacement();
     });
-    document.getElementById('btn-ready').addEventListener('click', () => {
+    rebind('btn-ready', () => {
       if (!this._allPlaced()) return;
       sfxClick();
       const ships = this.placement.ships.map((s) => ({ name: s.name, cells: s.cells }));

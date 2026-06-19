@@ -32,6 +32,7 @@ function tone(freq, start, dur, type = 'sine', gain = 0.2) {
   osc.connect(g).connect(c.destination);
   osc.start(start);
   osc.stop(start + dur + 0.05);
+  return osc;
 }
 
 function noise(start, dur, gain = 0.3) {
@@ -77,7 +78,7 @@ export function sfxClick() {
   tone(660, c.currentTime, 0.06, 'square', 0.05);
 }
 
-let anthemTimers = [];
+let anthemNodes = [];
 export function playAnthem(notes, { loser = false } = {}) {
   stopAnthem();
   const c = ac();
@@ -86,14 +87,20 @@ export function playAnthem(notes, { loser = false } = {}) {
   notes.forEach((n) => {
     let freq = NOTE_FREQ[n] || 440;
     if (loser) freq /= 2; // mournful, lower octave
-    tone(freq, t, beat * 0.9, loser ? 'sawtooth' : 'triangle', loser ? 0.12 : 0.22);
+    anthemNodes.push(tone(freq, t, beat * 0.9, loser ? 'sawtooth' : 'triangle', loser ? 0.12 : 0.22));
     // light brass harmony
-    if (!loser) tone(freq / 2, t, beat * 0.9, 'sine', 0.07);
+    if (!loser) anthemNodes.push(tone(freq / 2, t, beat * 0.9, 'sine', 0.07));
     t += beat;
   });
 }
 
 export function stopAnthem() {
-  anthemTimers.forEach((id) => clearTimeout(id));
-  anthemTimers = [];
+  anthemNodes.forEach((osc) => {
+    try {
+      osc.stop();
+    } catch (e) {
+      /* already stopped */
+    }
+  });
+  anthemNodes = [];
 }
