@@ -23,3 +23,6 @@ Each entry uses this format:
 | CHANGE-003 | Whole-ship dynamite explosion on sink (bigger boom) | Jesse | Done |
 | BUG-007 | National anthem couldn't be stopped (stopAnthem no-op) | Devin Review | Fixed |
 | BUG-008 | Placement control listeners accumulate across games | Devin Review | Fixed |
+| SECURITY-001 | Malformed socket event crashed the server (remote DoS) | Security audit | Fixed |
+| SECURITY-002 | Single client could create unlimited games (resource exhaustion) | Security audit | Fixed |
+| SECURITY-003 | Missing HTTP security headers (CSP, X-Frame-Options, nosniff) | Security audit | Fixed |
