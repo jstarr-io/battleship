@@ -197,6 +197,58 @@ html, body {
 .ship-rotate:hover { background: var(--gold); color: #11202a; }
 .grid-cell.preview-ok { background: rgba(76,175,114,0.5); outline: 1px solid var(--ok); }
 .grid-cell.preview-bad { background: rgba(192,57,43,0.5); outline: 1px solid var(--red); }
+/* Dynamite blast when a ship is sunk */
+.boom { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
+.boom > span { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 50%; }
+.boom-flash {
+  width: 10px; height: 10px;
+  background: radial-gradient(circle, #fff 0%, rgba(255,255,255,0.85) 45%, rgba(255,255,255,0) 75%);
+  animation: boomFlash 0.32s ease-out forwards;
+}
+@keyframes boomFlash {
+  0% { width: 10px; height: 10px; opacity: 0; }
+  18% { width: 70px; height: 70px; opacity: 1; }
+  100% { width: 90px; height: 90px; opacity: 0; }
+}
+.boom-core {
+  width: 8px; height: 8px;
+  background: radial-gradient(circle, #fff 0%, #ffe08a 30%, #ff8c1a 60%, #c0392b 92%, rgba(120,20,10,0) 100%);
+  box-shadow: 0 0 30px 12px rgba(255,140,30,0.95);
+  animation: boomCore 0.7s ease-out forwards;
+}
+@keyframes boomCore {
+  0% { width: 8px; height: 8px; opacity: 1; }
+  55% { width: 64px; height: 64px; opacity: 1; }
+  100% { width: 84px; height: 84px; opacity: 0; }
+}
+.boom-ring {
+  width: 8px; height: 8px; border: 3px solid rgba(255,205,90,0.95);
+  animation: boomRing 0.7s ease-out forwards;
+}
+.boom-ring.ring2 {
+  border-color: rgba(255,110,40,0.8); animation: boomRing 0.85s ease-out 0.08s forwards;
+}
+@keyframes boomRing {
+  0% { width: 8px; height: 8px; opacity: 0.95; }
+  100% { width: 110px; height: 110px; opacity: 0; border-color: rgba(255,120,40,0); }
+}
+.boom-frag {
+  width: 4px; height: 4px; background: #ffce54; box-shadow: 0 0 6px #ff8c2a;
+  animation: boomFrag 0.8s ease-out forwards;
+}
+@keyframes boomFrag {
+  0% { transform: translate(-50%, -50%); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))); opacity: 0; }
+}
+.boom-smoke {
+  width: 12px; height: 12px; background: rgba(60,60,60,0.55);
+  animation: boomSmoke 1.25s ease-out forwards;
+}
+@keyframes boomSmoke {
+  0% { width: 12px; height: 12px; opacity: 0; }
+  35% { opacity: 0.6; }
+  100% { width: 86px; height: 86px; opacity: 0; transform: translate(-50%, -85%); }
+}
 .grid-cell.hit { background: radial-gradient(circle, #7a2218, #3a1410); }
 .grid-cell.miss { background: #0b2a33; }
 

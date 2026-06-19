@@ -490,6 +490,7 @@ export class BattleshipUI {
       this.log(`You fired ${d.label} — HIT.`, 'hit');
       if (d.sunk) {
         sfxSunk();
+        this._explodeShip(this.tracking, d.sunkCells || [{ r: d.r, c: d.c }]);
         this.log(`You SUNK the enemy ${d.sunk}!`, 'sunk');
         this._announce(`ENEMY ${d.sunk.toUpperCase()} SUNK!`);
       }
@@ -511,6 +512,7 @@ export class BattleshipUI {
       this.log(`Enemy fired ${d.label} — HIT on your fleet.`, 'hit');
       if (d.sunk) {
         sfxSunk();
+        this._explodeShip(this.own, d.sunkCells || [{ r: d.r, c: d.c }]);
         this.log(`Your ${d.sunk} was SUNK!`, 'sunk');
         this._announce(`YOUR ${d.sunk.toUpperCase()} SUNK!`, true);
       }
@@ -520,6 +522,50 @@ export class BattleshipUI {
       sfxMiss();
       this.log(`Enemy fired ${d.label} — miss.`, 'miss');
     }
+  }
+
+  // Detonate the whole sunk ship: a staggered chain of blasts, one per cell.
+  _explodeShip(grid, cells) {
+    if (!grid || !Array.isArray(cells) || cells.length === 0) return;
+    cells.forEach((cell, i) => {
+      const el = grid.at(cell.r, cell.c);
+      setTimeout(() => this._explode(el), i * 70);
+    });
+  }
+
+  // Big dynamite blast on a single cell: flash + fireball + shockwave + shrapnel + smoke.
+  _explode(el) {
+    if (!el) return;
+    const boom = document.createElement('div');
+    boom.className = 'boom';
+    const flash = document.createElement('span');
+    flash.className = 'boom-flash';
+    boom.appendChild(flash);
+    const ring = document.createElement('span');
+    ring.className = 'boom-ring';
+    boom.appendChild(ring);
+    const ring2 = document.createElement('span');
+    ring2.className = 'boom-ring ring2';
+    boom.appendChild(ring2);
+    const smoke = document.createElement('span');
+    smoke.className = 'boom-smoke';
+    boom.appendChild(smoke);
+    const frags = 18;
+    for (let i = 0; i < frags; i++) {
+      const p = document.createElement('span');
+      p.className = 'boom-frag';
+      const ang = (Math.PI * 2 * i) / frags + Math.random() * 0.4;
+      const dist = 42 + Math.random() * 34;
+      p.style.setProperty('--dx', `${Math.cos(ang) * dist}px`);
+      p.style.setProperty('--dy', `${Math.sin(ang) * dist}px`);
+      p.style.animationDelay = `${Math.floor(Math.random() * 60)}ms`;
+      boom.appendChild(p);
+    }
+    const core = document.createElement('span');
+    core.className = 'boom-core';
+    boom.appendChild(core);
+    el.appendChild(boom);
+    setTimeout(() => boom.remove(), 1300);
   }
 
   _announce(text, bad = false) {

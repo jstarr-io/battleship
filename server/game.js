@@ -175,6 +175,7 @@ export class Game {
 
     let hit = false;
     let sunk = null;
+    let sunkCells = null;
     let gameOver = false;
     const shipName = board.cellMap.get(key);
     if (shipName) {
@@ -183,6 +184,8 @@ export class Game {
       ship.remaining.delete(key);
       if (ship.remaining.size === 0) {
         sunk = shipName;
+        // Ship is sunk and therefore fully revealed — safe to send its cells.
+        sunkCells = ship.cells.map((cell) => ({ ...cell }));
       }
     }
 
@@ -201,7 +204,7 @@ export class Game {
       this.turnIndex = (this.turnIndex + 1) % this.players.length;
     }
 
-    return { ok: true, r, c, hit, sunk, gameOver, label: coordLabel(r, c) };
+    return { ok: true, r, c, hit, sunk, sunkCells, gameOver, label: coordLabel(r, c) };
   }
 
   // Full reveal of a player's ships (only used at game over).
