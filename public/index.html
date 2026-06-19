@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BATTLESHIP · 1917</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;500;700&family=Special+Elite&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- ENTRY GATE -->
+      <section id="screen-entry" class="screen active">
+        <div class="entry-wrap">
+          <h1 class="entry-title">ENLISTMENT CHECKPOINT</h1>
+          <p class="entry-sub" id="entry-instruction">
+            Wipe the fog &mdash; move your cursor across the poster to reveal the figure.
+          </p>
+          <div class="reveal-frame">
+            <canvas id="reveal-canvas" width="480" height="640"></canvas>
+          </div>
+          <div id="entry-question" class="entry-question hidden">
+            <label for="entry-answer">Who is this?</label>
+            <div class="answer-row">
+              <input
+                id="entry-answer"
+                type="text"
+                autocomplete="off"
+                placeholder="Type your answer..."
+              />
+              <button id="entry-submit" class="btn">ENTER</button>
+            </div>
+            <p id="entry-feedback" class="feedback"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- COUNTRY SELECT -->
+      <section id="screen-country" class="screen">
+        <div class="country-wrap">
+          <h2 class="section-title">CHOOSE YOUR NATION</h2>
+          <p class="section-sub">Pick the power you will command into battle.</p>
+          <div class="name-row">
+            <input id="player-name" type="text" maxlength="20" placeholder="Commander name (optional)" />
+          </div>
+          <div id="country-grid" class="country-grid"></div>
+          <div class="country-actions">
+            <div id="selected-banner" class="selected-banner hidden"></div>
+            <div class="mode-buttons">
+              <button id="btn-play-ai" class="btn" disabled>PLAY vs A.I.</button>
+              <button id="btn-play-online" class="btn btn-secondary" disabled>PLAY ONLINE</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOBBY / WAITING -->
+      <section id="screen-lobby" class="screen">
+        <div class="lobby-wrap">
+          <div class="radar">
+            <div class="radar-sweep"></div>
+          </div>
+          <h2 class="section-title" id="lobby-status">SCANNING THE SEAS FOR AN OPPONENT…</h2>
+          <button id="btn-cancel-search" class="btn btn-secondary">CANCEL</button>
+        </div>
+      </section>
+
+      <!-- GAME -->
+      <section id="screen-game" class="screen">
+        <header class="game-header">
+          <div class="player-tag" id="tag-you"></div>
+          <div class="turn-indicator" id="turn-indicator">PREPARE YOUR FLEET</div>
+          <div class="player-tag" id="tag-opp"></div>
+        </header>
+
+        <div class="boards">
+          <!-- Tracking grid (firing) -->
+          <div class="board-block">
+            <h3 class="board-label">TARGETING GRID <span class="hint">(your shots on the enemy)</span></h3>
+            <div id="board-tracking" class="grid-host"></div>
+          </div>
+
+          <!-- Own fleet -->
+          <div class="board-block">
+            <h3 class="board-label">YOUR WATERS <span class="hint">(your fleet &amp; enemy shots)</span></h3>
+            <div id="board-own" class="grid-host"></div>
+          </div>
+        </div>
+
+        <!-- Placement controls -->
+        <div id="placement-panel" class="placement-panel">
+          <div class="fleet-list" id="fleet-list"></div>
+          <div class="placement-controls">
+            <button id="btn-orient" class="btn btn-secondary">ORIENT: HORIZONTAL</button>
+            <button id="btn-random" class="btn btn-secondary">RANDOMIZE</button>
+            <button id="btn-reset" class="btn btn-secondary">RESET</button>
+            <button id="btn-ready" class="btn" disabled>READY FOR BATTLE</button>
+          </div>
+          <p id="placement-msg" class="placement-msg"></p>
+        </div>
+
+        <div id="battle-log" class="battle-log"></div>
+      </section>
+
+      <!-- GAME OVER -->
+      <section id="screen-over" class="screen">
+        <div class="over-wrap">
+          <canvas id="over-canvas" width="900" height="500"></canvas>
+          <h2 id="over-title" class="over-title"></h2>
+          <p id="over-sub" class="over-sub"></p>
+          <button id="btn-again" class="btn">RETURN TO PORT</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
