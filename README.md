@@ -22,25 +22,38 @@ Play against another human (online matchmaking) or against the A.I.
 
 ## Run
 ```bash
-npm install
-npm start          # http://localhost:3000  (set PORT to override)
+pip install -r requirements.txt
+python app.py        # http://localhost:3000  (set PORT to override)
+```
+For production (and on Railway) it runs under gunicorn with an eventlet worker:
+```bash
+gunicorn --worker-class eventlet -w 1 app:app --bind 0.0.0.0:$PORT
 ```
 
 ## Tests
 ```bash
-npm test           # headless rules + AI simulation (300 games)
+python selftest.py   # headless rules + AI simulation (300 games)
 # Online protocol test (start a server on :3100 first):
-PORT=3100 npm start &
-npm run test:socket
+PORT=3100 python app.py &
+URL=http://localhost:3100 python sockettest.py
 ```
 
 ## Architecture
-- `server/game.js` — authoritative game state + rule validation.
-- `server/ai.js` — random valid placement + hunt/target firing.
-- `server/index.js` — Express static host + Socket.IO matchmaking/relay.
+The **server** is Python (Flask + Flask-SocketIO); the **browser client** is
+vanilla JS/HTML/CSS (browsers can't run Python). The Socket.IO event protocol is
+identical to the original Node implementation.
+- `game.py` — authoritative game state + rule validation.
+- `ai.py` — random valid placement + hunt/target firing.
+- `app.py` — Flask static host + Flask-SocketIO matchmaking/relay + security headers.
 - `public/js/` — `app.js` (screen flow + protocol), `entry.js` (reveal gate),
   `game.js` (board UI), `countries.js` (flags + anthems), `over.js` (end scene),
   `audio.js` (Web Audio SFX/anthems).
+- `public/vendor/socket.io.min.js` — vendored Socket.IO browser client (served
+  locally so it loads under the strict `script-src 'self'` CSP).
+
+## Deploy (Railway)
+`Procfile` + `railway.toml` define the gunicorn start command; Railway builds
+from `requirements.txt` via Nixpacks and injects `$PORT`.
 
 ## Bug log
 See [`BUGS.md`](./BUGS.md) — every bug found during development is documented

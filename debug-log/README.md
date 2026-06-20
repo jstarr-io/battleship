@@ -26,3 +26,4 @@ Each entry uses this format:
 | SECURITY-001 | Malformed socket event crashed the server (remote DoS) | Security audit | Fixed |
 | SECURITY-002 | Single client could create unlimited games (resource exhaustion) | Security audit | Fixed |
 | SECURITY-003 | Missing HTTP security headers (CSP, X-Frame-Options, nosniff) | Security audit | Fixed |
+| CHANGE-004 | Migrate backend Node → Python (Flask/Flask-SocketIO) + Railway deploy | Jesse | Done |

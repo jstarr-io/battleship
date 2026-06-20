@@ -7,3 +7,10 @@ cloudflared
 
 # dev-only preview harnesses
 public/_*.html
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
