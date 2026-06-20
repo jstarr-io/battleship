@@ -56,5 +56,6 @@ identical to the original Node implementation.
 from `requirements.txt` via Nixpacks and injects `$PORT`.
 
 ## Bug log
-See [`BUGS.md`](./BUGS.md) — every bug found during development is documented
-with its root cause and fix, versioned for traceability.
+See [`debug-log/`](./debug-log) — one file per item (bug / reason / applied fix /
+outcome), indexed in [`debug-log/README.md`](./debug-log/README.md). Covers every
+bug, change, and security fix found during development.
