@@ -49,4 +49,11 @@ game publicly in the cloud instead of an ephemeral dev tunnel.
 (`sockettest.py`) passes (exactly one winner, both notified). The server serves
 with the same CSP/security headers (`/health` 200). Verified in-browser: entry
 fog reveal, country select, vs-A.I. game to completion, explosions, and the
-game-over flag scene all work. Deployed to Railway and confirmed live.
+game-over flag scene all work.
+
+Deployed to **Railway** (project `battleship-wwi`, built with Nixpacks from
+`requirements.txt` + `railway.toml`). Live URL:
+**https://battleship-wwi-production.up.railway.app**. Confirmed live end-to-end:
+`/health` returns 200 with the full CSP/security headers, and a real-time vs-A.I.
+game (Socket.IO over Railway's edge) runs through placement → battle → fire/AI
+turn handoff with a clean browser console.
