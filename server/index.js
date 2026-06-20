@@ -13,6 +13,32 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Security headers. No inline scripts/styles in markup, so a strict script-src
+// is safe; style-src allows 'unsafe-inline' for runtime CSSOM tweaks, and
+// connect-src 'self' covers the same-origin Socket.IO websocket.
+app.use((_req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "connect-src 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+    ].join('; ')
+  );
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  res.removeHeader('X-Powered-By');
+  next();
+});
+
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
@@ -145,8 +171,28 @@ function maybeRunAI(record) {
   }, 700 + Math.random() * 600);
 }
 
+// True if this socket is already in a live (unfinished) game. Used to stop a
+// single client from spawning unlimited games (resource-exhaustion DoS).
+function socketInLiveGame(socket) {
+  const record = games.get(socket.data.gameId);
+  return !!record && record.game.phase !== 'finished';
+}
+
+// Register an event handler that ignores malformed payloads and never lets a
+// thrown error escape into Socket.IO (an uncaught throw would crash the process).
+function on(socket, event, handler) {
+  socket.on(event, (payload) => {
+    try {
+      handler(payload && typeof payload === 'object' ? payload : {});
+    } catch (err) {
+      console.error(`[${event}] handler error:`, err);
+    }
+  });
+}
+
 io.on('connection', (socket) => {
-  socket.on('findGame', ({ country, name }) => {
+  on(socket, 'findGame', ({ country, name }) => {
+    if (socketInLiveGame(socket)) return;
     country = String(country || 'Unknown').slice(0, 40);
     name = String(name || 'Anonymous').slice(0, 24);
 
@@ -173,13 +219,15 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('playAI', ({ country, name }) => {
+  on(socket, 'playAI', ({ country, name }) => {
+    if (socketInLiveGame(socket)) return;
+    if (waitingPlayer && waitingPlayer.socket.id === socket.id) clearWaiting();
     country = String(country || 'Unknown').slice(0, 40);
     name = String(name || 'Anonymous').slice(0, 24);
     startAIGame({ socket, socketId: socket.id, country, name });
   });
 
-  socket.on('placeShips', ({ ships }) => {
+  on(socket, 'placeShips', ({ ships }) => {
     const record = games.get(socket.data.gameId);
     if (!record) return;
     const res = record.game.placeShips(socket.id, ships);
@@ -201,7 +249,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('fire', ({ r, c }) => {
+  on(socket, 'fire', ({ r, c }) => {
     const record = games.get(socket.data.gameId);
     if (!record) return;
     const { game } = record;
@@ -239,7 +287,7 @@ io.on('connection', (socket) => {
     maybeRunAI(record);
   });
 
-  socket.on('cancelSearch', () => {
+  on(socket, 'cancelSearch', () => {
     if (waitingPlayer && waitingPlayer.socket.id === socket.id) {
       clearWaiting();
     }
