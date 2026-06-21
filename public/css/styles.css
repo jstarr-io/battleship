@@ -184,8 +184,82 @@ html, body {
 .grid-host.armed .grid-cell:not(.hit):not(.miss):hover {
   background: #1c4350; cursor: crosshair; outline: 1px solid var(--gold);
 }
-.grid-cell.ship { background: linear-gradient(180deg, #4a525a, #353c43); border-color: #5a636b; cursor: grab; }
+/* --- Ship silhouettes --- */
+.grid-cell.ship {
+  border-color: transparent;
+  cursor: grab;
+  --ship-hull: #5c6670;
+  --ship-deck: #6e7a84;
+  background: linear-gradient(180deg, var(--ship-deck), var(--ship-hull));
+  position: relative;
+}
 .grid-cell.ship:active { cursor: grabbing; }
+
+/* Ship type color schemes */
+.grid-cell[data-ship-type="carrier"]      { --ship-hull: #4a5f3a; --ship-deck: #5f7a4a; }
+.grid-cell[data-ship-type="battleship"]   { --ship-hull: #4a4a5f; --ship-deck: #5a5a72; }
+.grid-cell[data-ship-type="destroyer"]    { --ship-hull: #5f4a3a; --ship-deck: #7a5f4a; }
+.grid-cell[data-ship-type="submarine"]    { --ship-hull: #3a4f5f; --ship-deck: #4a6272; }
+.grid-cell[data-ship-type="patrol-boat"]  { --ship-hull: #5f3a4a; --ship-deck: #724a5a; }
+
+/* Inner hull detail — raised center strip */
+.grid-cell.ship::before {
+  content: '';
+  position: absolute;
+  inset: 20% 15%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Horizontal ship segments */
+.grid-cell[data-ship-orient="H"][data-ship-seg="bow"] {
+  border-radius: 50% 0 0 50%;
+}
+.grid-cell[data-ship-orient="H"][data-ship-seg="stern"] {
+  border-radius: 0 40% 40% 0;
+}
+.grid-cell[data-ship-orient="H"][data-ship-seg="mid"] {
+  border-radius: 0;
+}
+
+/* Vertical ship segments */
+.grid-cell[data-ship-orient="V"][data-ship-seg="bow"] {
+  border-radius: 50% 50% 0 0;
+}
+.grid-cell[data-ship-orient="V"][data-ship-seg="stern"] {
+  border-radius: 0 0 40% 40%;
+}
+.grid-cell[data-ship-orient="V"][data-ship-seg="mid"] {
+  border-radius: 0;
+}
+
+/* Mast / turret dots on mid cells */
+.grid-cell[data-ship-seg="mid"]::after {
+  content: '';
+  position: absolute;
+  width: 6px; height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 0 3px rgba(255,255,255,0.15);
+}
+
+/* Bridge/tower on carrier mid cells */
+.grid-cell[data-ship-type="carrier"][data-ship-seg="mid"]::after {
+  width: 8px; height: 8px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 1px;
+}
+
+/* Conning tower on submarine */
+.grid-cell[data-ship-type="submarine"][data-ship-seg="mid"]::after {
+  width: 5px; height: 10px;
+  border-radius: 2px 2px 0 0;
+  background: rgba(255,255,255,0.22);
+}
 .ship-rotate {
   position: absolute; top: -7px; right: -7px; z-index: 5;
   width: 18px; height: 18px; padding: 0; line-height: 16px;
@@ -263,11 +337,25 @@ html, body {
   display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: 4px;
   background: #16222b; border: 1px solid var(--line); color: var(--ink); cursor: pointer;
   font-family: 'Oswald', sans-serif;
+  position: relative;
+  overflow: hidden;
 }
+.fleet-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--fleet-color, var(--line));
+}
+.fleet-item:nth-child(1) { --fleet-color: #5f7a4a; }
+.fleet-item:nth-child(2) { --fleet-color: #5a5a72; }
+.fleet-item:nth-child(3) { --fleet-color: #7a5f4a; }
+.fleet-item:nth-child(4) { --fleet-color: #4a6272; }
+.fleet-item:nth-child(5) { --fleet-color: #724a5a; }
 .fleet-item.active { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(200,162,74,0.3); }
 .fleet-item.placed { opacity: 0.55; text-decoration: line-through; }
 .fleet-name { font-weight: 700; font-size: 13px; letter-spacing: 1px; }
-.fleet-pips { color: var(--gold); letter-spacing: 3px; font-size: 11px; }
+.fleet-pips { color: var(--fleet-color, var(--gold)); letter-spacing: 2px; font-size: 11px; font-family: monospace; }
 .placement-controls { display: flex; flex-wrap: wrap; gap: 10px; }
 .placement-msg { margin: 10px 0 0; color: var(--muted); font-size: 14px; min-height: 18px; }
 .placement-msg.bad { color: #e07a6a; }

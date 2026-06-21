@@ -125,9 +125,8 @@ export class BattleshipUI {
     this.placement.ships.forEach((s, i) => {
       const el = document.createElement('button');
       el.className = 'fleet-item' + (s.placed ? ' placed' : '') + (i === this.placement.activeIndex ? ' active' : '');
-      el.innerHTML = `<span class="fleet-name">${s.name}</span><span class="fleet-pips">${'▪'.repeat(
-        s.size
-      )}</span>`;
+      const pips = '◀' + '▬'.repeat(s.size - 2) + '▶';
+      el.innerHTML = `<span class="fleet-name">${s.name}</span><span class="fleet-pips">${pips}</span>`;
       el.addEventListener('click', () => {
         if (s.placed) return; // placed ships are repositioned by dragging
         sfxClick();
@@ -243,11 +242,18 @@ export class BattleshipUI {
   _commitShip(ship, cells) {
     ship.placed = true;
     ship.cells = cells;
-    cells.forEach(({ r, c }) => {
+    const orient = cells.length < 2 || cells[0].r === cells[1].r ? 'H' : 'V';
+    cells.forEach(({ r, c }, i) => {
       this.placement.occupied.set(`${r},${c}`, ship.name);
       const el = this.own.at(r, c);
       el.classList.add('ship');
       el.dataset.ship = ship.name;
+      // Ship segment metadata for silhouette rendering
+      el.dataset.shipType = ship.name.toLowerCase().replace(/\s+/g, '-');
+      el.dataset.shipOrient = orient;
+      if (i === 0) el.dataset.shipSeg = 'bow';
+      else if (i === cells.length - 1) el.dataset.shipSeg = 'stern';
+      else el.dataset.shipSeg = 'mid';
     });
   }
 
@@ -257,6 +263,9 @@ export class BattleshipUI {
       const el = this.own.at(r, c);
       el.classList.remove('ship');
       delete el.dataset.ship;
+      delete el.dataset.shipType;
+      delete el.dataset.shipOrient;
+      delete el.dataset.shipSeg;
     });
   }
 
@@ -401,6 +410,9 @@ export class BattleshipUI {
     this.own.cells.forEach((c) => {
       c.classList.remove('ship');
       delete c.dataset.ship;
+      delete c.dataset.shipType;
+      delete c.dataset.shipOrient;
+      delete c.dataset.shipSeg;
     });
     this._renderFleetList();
     this._renderShipIcons();
@@ -434,11 +446,17 @@ export class BattleshipUI {
           ship.cells = cells;
           ship.pivot = { r, c };
           ship.facing = horiz ? 0 : 1;
-          cells.forEach(({ r: rr, c: cc }) => {
+          const orient = horiz ? 'H' : 'V';
+          cells.forEach(({ r: rr, c: cc }, i) => {
             occ.set(`${rr},${cc}`, ship.name);
             const el = this.own.at(rr, cc);
             el.classList.add('ship');
             el.dataset.ship = ship.name;
+            el.dataset.shipType = ship.name.toLowerCase().replace(/\s+/g, '-');
+            el.dataset.shipOrient = orient;
+            if (i === 0) el.dataset.shipSeg = 'bow';
+            else if (i === cells.length - 1) el.dataset.shipSeg = 'stern';
+            else el.dataset.shipSeg = 'mid';
           });
           placed = true;
         }
