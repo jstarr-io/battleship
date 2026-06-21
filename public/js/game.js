@@ -462,15 +462,31 @@ export class BattleshipUI {
   }
 
   onBattleStart() {
-    document.getElementById('placement-panel').classList.add('hidden');
+    const panel = document.getElementById('placement-panel');
+    panel.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    panel.style.opacity = '0';
+    panel.style.transform = 'translateY(10px)';
+    setTimeout(() => {
+      panel.classList.add('hidden');
+      panel.style.cssText = '';
+    }, 400);
+    // Animate boards into "armed" state
+    document.querySelectorAll('.board-block').forEach((b, i) => {
+      b.style.transition = 'transform 0.5s ease, box-shadow 0.5s ease';
+      b.style.transform = 'scale(0.98)';
+      setTimeout(() => { b.style.transform = ''; }, 100 + i * 80);
+    });
     this.log('Battle commences!', 'sys');
   }
 
   setTurn(yourTurn) {
     this.myTurn = yourTurn;
     const ind = document.getElementById('turn-indicator');
+    // Trigger slide-in animation on turn change
+    ind.classList.add('slide-in');
+    ind.addEventListener('animationend', () => ind.classList.remove('slide-in'), { once: true });
     ind.textContent = yourTurn ? 'YOUR MOVE — FIRE!' : "ENEMY'S MOVE…";
-    ind.className = 'turn-indicator ' + (yourTurn ? 'active' : 'waiting');
+    ind.className = 'turn-indicator slide-in ' + (yourTurn ? 'active' : 'waiting');
     this.tracking.host.classList.toggle('armed', yourTurn);
   }
 
@@ -579,10 +595,11 @@ export class BattleshipUI {
   _announce(text, bad = false) {
     const ind = document.getElementById('turn-indicator');
     const prev = ind.textContent;
+    const prevClass = ind.className;
     ind.textContent = text;
-    ind.classList.add(bad ? 'flash-bad' : 'flash-good');
+    ind.className = 'turn-indicator ' + (bad ? 'flash-bad' : 'flash-good');
     setTimeout(() => {
-      ind.classList.remove('flash-bad', 'flash-good');
+      ind.className = prevClass;
       ind.textContent = prev;
     }, 1400);
   }
