@@ -243,16 +243,21 @@ export class BattleshipUI {
     ship.placed = true;
     ship.cells = cells;
     const orient = cells.length < 2 || cells[0].r === cells[1].r ? 'H' : 'V';
-    cells.forEach(({ r, c }, i) => {
+    // Sort cells positionally so bow/stern segments match CSS expectations
+    // (bow = leftmost for H, topmost for V; stern = rightmost/bottommost)
+    const sorted = orient === 'H'
+      ? [...cells].sort((a, b) => a.c - b.c)
+      : [...cells].sort((a, b) => a.r - b.r);
+    cells.forEach(({ r, c }) => {
       this.placement.occupied.set(`${r},${c}`, ship.name);
       const el = this.own.at(r, c);
       el.classList.add('ship');
       el.dataset.ship = ship.name;
-      // Ship segment metadata for silhouette rendering
       el.dataset.shipType = ship.name.toLowerCase().replace(/\s+/g, '-');
       el.dataset.shipOrient = orient;
-      if (i === 0) el.dataset.shipSeg = 'bow';
-      else if (i === cells.length - 1) el.dataset.shipSeg = 'stern';
+      const idx = sorted.findIndex(s => s.r === r && s.c === c);
+      if (idx === 0) el.dataset.shipSeg = 'bow';
+      else if (idx === sorted.length - 1) el.dataset.shipSeg = 'stern';
       else el.dataset.shipSeg = 'mid';
     });
   }
@@ -447,15 +452,19 @@ export class BattleshipUI {
           ship.pivot = { r, c };
           ship.facing = horiz ? 0 : 1;
           const orient = horiz ? 'H' : 'V';
-          cells.forEach(({ r: rr, c: cc }, i) => {
+          const sorted = orient === 'H'
+            ? [...cells].sort((a, b) => a.c - b.c)
+            : [...cells].sort((a, b) => a.r - b.r);
+          cells.forEach(({ r: rr, c: cc }) => {
             occ.set(`${rr},${cc}`, ship.name);
             const el = this.own.at(rr, cc);
             el.classList.add('ship');
             el.dataset.ship = ship.name;
             el.dataset.shipType = ship.name.toLowerCase().replace(/\s+/g, '-');
             el.dataset.shipOrient = orient;
-            if (i === 0) el.dataset.shipSeg = 'bow';
-            else if (i === cells.length - 1) el.dataset.shipSeg = 'stern';
+            const idx = sorted.findIndex(s => s.r === rr && s.c === cc);
+            if (idx === 0) el.dataset.shipSeg = 'bow';
+            else if (idx === sorted.length - 1) el.dataset.shipSeg = 'stern';
             else el.dataset.shipSeg = 'mid';
           });
           placed = true;

@@ -29,3 +29,4 @@ Each entry uses this format:
 | CHANGE-004 | Migrate backend Node → Python (Flask/Flask-SocketIO) + Railway deploy | Jesse | Done |
 | CHANGE-005 | Ship silhouettes replace dots (colored hull shapes per type) | Jesse | Done |
 | CHANGE-006 | Glass-morphism UI overhaul (frosted panels, modern palette) | Jesse | Done |
+| BUG-009 | Ships look like colored blobs, not actual ships | Jesse | Fixed |
