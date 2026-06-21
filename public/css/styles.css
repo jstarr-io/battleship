@@ -216,155 +216,35 @@ html, body {
 .grid-host.armed .grid-cell:not(.hit):not(.miss):hover {
   background: #1c4350; cursor: crosshair; outline: 1px solid var(--gold);
 }
-/* --- Ship silhouettes --- */
+/* --- Ship silhouettes (SVG overlays) --- */
 .grid-cell.ship {
-  border-color: transparent;
+  background: rgba(100, 120, 140, 0.15);
+  border-color: rgba(100, 120, 140, 0.3);
   cursor: grab;
-  --ship-hull: #5c6670;
-  --ship-deck: #6e7a84;
-  --ship-accent: #8a9aa6;
-  background: var(--ship-hull);
   position: relative;
   overflow: visible;
 }
 .grid-cell.ship:active { cursor: grabbing; }
 
-/* Ship type color schemes */
-.grid-cell[data-ship-type="carrier"]      { --ship-hull: #4e6840; --ship-deck: #5f7a4a; --ship-accent: #7a9960; }
-.grid-cell[data-ship-type="battleship"]   { --ship-hull: #555568; --ship-deck: #6a6a80; --ship-accent: #8888a0; }
-.grid-cell[data-ship-type="destroyer"]    { --ship-hull: #6a5540; --ship-deck: #7f6a50; --ship-accent: #9a8060; }
-.grid-cell[data-ship-type="submarine"]    { --ship-hull: #3a5565; --ship-deck: #4a6878; --ship-accent: #6090a8; }
-.grid-cell[data-ship-type="patrol-boat"]  { --ship-hull: #654050; --ship-deck: #7a5565; --ship-accent: #a06878; }
-
-/* Hull shape via border-radius (no clip-path — preserves rotate button) */
-/* Horizontal segments */
-.grid-cell[data-ship-orient="H"][data-ship-seg="bow"] {
-  border-radius: 50% 4px 4px 50%;
-  background: linear-gradient(180deg, var(--ship-deck) 0%, var(--ship-hull) 50%, var(--ship-deck) 100%);
-}
-.grid-cell[data-ship-orient="H"][data-ship-seg="stern"] {
-  border-radius: 4px 30% 30% 4px;
-  background: linear-gradient(180deg, var(--ship-deck) 0%, var(--ship-hull) 50%, var(--ship-deck) 100%);
-}
-.grid-cell[data-ship-orient="H"][data-ship-seg="mid"] {
-  border-radius: 0;
-  background: linear-gradient(180deg, var(--ship-deck) 5%, var(--ship-hull) 25%, var(--ship-hull) 75%, var(--ship-deck) 95%);
-}
-
-/* Vertical segments */
-.grid-cell[data-ship-orient="V"][data-ship-seg="bow"] {
-  border-radius: 50% 50% 4px 4px;
-  background: linear-gradient(90deg, var(--ship-deck) 0%, var(--ship-hull) 50%, var(--ship-deck) 100%);
-}
-.grid-cell[data-ship-orient="V"][data-ship-seg="stern"] {
-  border-radius: 4px 4px 30% 30%;
-  background: linear-gradient(90deg, var(--ship-deck) 0%, var(--ship-hull) 50%, var(--ship-deck) 100%);
-}
-.grid-cell[data-ship-orient="V"][data-ship-seg="mid"] {
-  border-radius: 0;
-  background: linear-gradient(90deg, var(--ship-deck) 5%, var(--ship-hull) 25%, var(--ship-hull) 75%, var(--ship-deck) 95%);
-}
-
-/* Deck center-line (raised keel/deck strip) */
-.grid-cell.ship::before {
-  content: '';
-  position: absolute;
+/* SVG ship overlay — positioned via CSS grid placement */
+.ship-overlay {
   pointer-events: none;
-  z-index: 1;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
 }
-.grid-cell[data-ship-orient="H"].ship::before {
-  top: 30%; bottom: 30%; left: 0; right: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.08), var(--ship-accent), rgba(255,255,255,0.08));
-  border-radius: 1px;
+.ship-hull-path {
+  fill: #8b95a0;
+  stroke: #2d3748;
+  stroke-width: 3.5;
 }
-.grid-cell[data-ship-orient="V"].ship::before {
-  left: 30%; right: 30%; top: 0; bottom: 0;
-  background: linear-gradient(90deg, rgba(255,255,255,0.08), var(--ship-accent), rgba(255,255,255,0.08));
-  border-radius: 1px;
-}
-
-/* Gun turrets / structures (::after) */
-.grid-cell.ship::after {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* Carrier: flight deck markings (landing strip lines) */
-.grid-cell[data-ship-type="carrier"][data-ship-orient="H"]::after {
-  top: 20%; bottom: 20%; left: 10%; right: 10%;
-  background: repeating-linear-gradient(90deg,
-    transparent 0px, transparent 4px,
-    rgba(255,255,255,0.15) 4px, rgba(255,255,255,0.15) 5px);
-  border: 1px solid rgba(255,255,255,0.1);
-}
-.grid-cell[data-ship-type="carrier"][data-ship-orient="V"]::after {
-  left: 20%; right: 20%; top: 10%; bottom: 10%;
-  background: repeating-linear-gradient(180deg,
-    transparent 0px, transparent 4px,
-    rgba(255,255,255,0.15) 4px, rgba(255,255,255,0.15) 5px);
-  border: 1px solid rgba(255,255,255,0.1);
-}
-
-/* Battleship: gun turrets (circles along deck) */
-.grid-cell[data-ship-type="battleship"][data-ship-seg="mid"]::after {
-  width: 10px; height: 10px;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, var(--ship-accent) 30%, rgba(0,0,0,0.3) 60%, transparent 65%);
-  border-radius: 50%;
-  box-shadow: 0 0 2px rgba(0,0,0,0.5);
-}
-.grid-cell[data-ship-type="battleship"][data-ship-seg="bow"]::after {
-  width: 8px; height: 8px;
-  top: 50%; left: 60%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, var(--ship-accent) 30%, rgba(0,0,0,0.3) 65%, transparent 70%);
-  border-radius: 50%;
-}
-
-/* Destroyer: dual smaller turrets */
-.grid-cell[data-ship-type="destroyer"][data-ship-seg="mid"]::after {
-  width: 8px; height: 8px;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, var(--ship-accent) 25%, rgba(0,0,0,0.3) 55%, transparent 60%);
-  border-radius: 50%;
-  box-shadow: 0 0 2px rgba(0,0,0,0.4);
-}
-
-/* Submarine: conning tower (raised rectangle on mid) */
-.grid-cell[data-ship-type="submarine"][data-ship-orient="H"][data-ship-seg="mid"]::after {
-  width: 7px; height: 14px;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  background: linear-gradient(180deg, var(--ship-accent), var(--ship-hull));
-  border-radius: 3px 3px 1px 1px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
-.grid-cell[data-ship-type="submarine"][data-ship-orient="V"][data-ship-seg="mid"]::after {
-  width: 14px; height: 7px;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  background: linear-gradient(90deg, var(--ship-accent), var(--ship-hull));
-  border-radius: 3px 3px 1px 1px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
-
-/* Patrol Boat: small bridge on bow */
-.grid-cell[data-ship-type="patrol-boat"][data-ship-seg="bow"]::after {
-  width: 6px; height: 6px;
-  top: 50%; left: 55%;
-  transform: translate(-50%, -50%);
-  background: var(--ship-accent);
-  border-radius: 1px;
-  box-shadow: 0 0 2px rgba(0,0,0,0.4);
-}
-
-/* Water line shadow on all ships */
-.grid-cell.ship {
-  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
+.ship-detail-path {
+  fill: none;
+  stroke: #3d4a5c;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .ship-rotate {
   position: absolute; top: -7px; right: -7px; z-index: 5;
