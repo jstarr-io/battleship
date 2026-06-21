@@ -28,3 +28,4 @@ Each entry uses this format:
 | SECURITY-003 | Missing HTTP security headers (CSP, X-Frame-Options, nosniff) | Security audit | Fixed |
 | CHANGE-004 | Migrate backend Node → Python (Flask/Flask-SocketIO) + Railway deploy | Jesse | Done |
 | CHANGE-005 | Ship silhouettes replace dots (colored hull shapes per type) | Jesse | Done |
+| CHANGE-006 | Glass-morphism UI overhaul (frosted panels, modern palette) | Jesse | Done |
