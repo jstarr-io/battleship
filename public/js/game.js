@@ -8,6 +8,126 @@ import { sfxHit, sfxMiss, sfxSunk, sfxClick } from './audio.js';
 const SIZE = 10;
 const ROW_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
+// Top-down ship silhouette SVG paths (horizontal, bow pointing LEFT).
+// Each path is drawn in a viewBox of [shipLength*100 x 100].
+// Shapes mimic classic Battleship board-game pieces viewed from above.
+const SHIP_PATHS = {
+  carrier: {
+    hull: 'M 5,50 L 35,15 L 70,15 L 70,12 L 460,12 L 480,18 L 495,35 L 495,65 L 480,82 L 460,88 L 70,88 L 70,85 L 35,85 Z',
+    details: [
+      // Flight deck rectangle
+      'M 80,18 L 440,18 L 440,82 L 80,82 Z',
+      // Deck center line
+      'M 80,50 L 440,50',
+      // Cross lines on deck
+      'M 140,18 L 140,82', 'M 220,18 L 220,82', 'M 300,18 L 300,82', 'M 380,18 L 380,82',
+      // Island superstructure (starboard)
+      'M 320,12 L 320,5 L 380,5 L 380,12',
+    ]
+  },
+  battleship: {
+    hull: 'M 5,50 L 30,20 L 60,16 L 360,16 L 380,22 L 393,35 L 393,65 L 380,78 L 360,84 L 60,84 L 30,80 Z',
+    details: [
+      // Forward turret A
+      'M 75,36 A 14,14 0 1,1 75,64 A 14,14 0 1,1 75,36 Z',
+      'M 75,50 L 45,50',
+      // Forward turret B
+      'M 130,36 A 14,14 0 1,1 130,64 A 14,14 0 1,1 130,36 Z',
+      'M 130,50 L 100,50',
+      // Bridge superstructure
+      'M 185,25 L 185,12 L 230,12 L 230,25',
+      'M 185,75 L 185,88 L 230,88 L 230,75',
+      // Aft turret X
+      'M 290,36 A 14,14 0 1,1 290,64 A 14,14 0 1,1 290,36 Z',
+      'M 290,50 L 315,50',
+      // Aft turret Y
+      'M 345,36 A 14,14 0 1,1 345,64 A 14,14 0 1,1 345,36 Z',
+      'M 345,50 L 370,50',
+    ]
+  },
+  destroyer: {
+    hull: 'M 5,50 L 30,22 L 55,18 L 260,18 L 278,25 L 292,38 L 292,62 L 278,75 L 260,82 L 55,82 L 30,78 Z',
+    details: [
+      // Forward gun
+      'M 65,38 A 12,12 0 1,1 65,62 A 12,12 0 1,1 65,38 Z',
+      'M 65,50 L 38,50',
+      // Bridge
+      'M 125,18 L 125,10 L 165,10 L 165,18',
+      // Aft gun
+      'M 230,38 A 12,12 0 1,1 230,62 A 12,12 0 1,1 230,38 Z',
+      'M 230,50 L 257,50',
+      // Funnel
+      'M 190,22 L 190,14 L 205,14 L 205,22',
+    ]
+  },
+  submarine: {
+    hull: 'M 8,50 C 8,32 30,18 60,18 L 240,18 C 270,18 292,32 292,50 C 292,68 270,82 240,82 L 60,82 C 30,82 8,68 8,50 Z',
+    details: [
+      // Conning tower (raised fairwater)
+      'M 125,18 L 125,6 L 175,6 L 175,18',
+      // Periscopes
+      'M 140,6 L 140,2', 'M 160,6 L 160,2',
+      // Forward diving planes
+      'M 50,18 L 40,10 M 50,82 L 40,90',
+      // Aft planes
+      'M 250,18 L 260,10 M 250,82 L 260,90',
+      // Hull centerline
+      'M 60,50 L 240,50',
+    ]
+  },
+  'patrol-boat': {
+    hull: 'M 5,50 L 25,25 L 45,22 L 158,22 L 175,30 L 192,42 L 192,58 L 175,70 L 158,78 L 45,78 L 25,75 Z',
+    details: [
+      // Bridge
+      'M 85,22 L 85,14 L 115,14 L 115,22',
+      // Forward gun
+      'M 45,38 A 10,10 0 1,1 45,62 A 10,10 0 1,1 45,38 Z',
+      'M 45,50 L 25,50',
+      // Aft gun
+      'M 150,40 A 8,8 0 1,1 150,60 A 8,8 0 1,1 150,40 Z',
+      'M 150,50 L 168,50',
+    ]
+  }
+};
+
+// Create an SVG element for a ship overlay on the grid.
+function createShipSVG(shipType, orient, size) {
+  const pathData = SHIP_PATHS[shipType];
+  if (!pathData) return null;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  const vbW = size * 100;
+  const vbH = 100;
+  svg.setAttribute('viewBox', `0 0 ${orient === 'H' ? vbW : vbH} ${orient === 'H' ? vbH : vbW}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.classList.add('ship-overlay');
+  svg.dataset.shipType = shipType;
+
+  const g = document.createElementNS(ns, 'g');
+  // For vertical ships, rotate the horizontal paths 90° around (50,50)
+  if (orient === 'V') {
+    g.setAttribute('transform', `rotate(90, ${vbH / 2}, ${vbH / 2})`);
+  }
+
+  // Hull path
+  const hull = document.createElementNS(ns, 'path');
+  hull.setAttribute('d', pathData.hull);
+  hull.classList.add('ship-hull-path');
+  g.appendChild(hull);
+
+  // Detail paths
+  pathData.details.forEach(d => {
+    const detail = document.createElementNS(ns, 'path');
+    detail.setAttribute('d', d);
+    detail.classList.add('ship-detail-path');
+    g.appendChild(detail);
+  });
+
+  svg.appendChild(g);
+  return svg;
+}
+
 function makeGrid(hostId) {
   const host = document.getElementById(hostId);
   host.innerHTML = '';
@@ -125,9 +245,8 @@ export class BattleshipUI {
     this.placement.ships.forEach((s, i) => {
       const el = document.createElement('button');
       el.className = 'fleet-item' + (s.placed ? ' placed' : '') + (i === this.placement.activeIndex ? ' active' : '');
-      el.innerHTML = `<span class="fleet-name">${s.name}</span><span class="fleet-pips">${'▪'.repeat(
-        s.size
-      )}</span>`;
+      const pips = '◀' + '▬'.repeat(s.size - 2) + '▶';
+      el.innerHTML = `<span class="fleet-name">${s.name}</span><span class="fleet-pips">${pips}</span>`;
       el.addEventListener('click', () => {
         if (s.placed) return; // placed ships are repositioned by dragging
         sfxClick();
@@ -243,12 +362,23 @@ export class BattleshipUI {
   _commitShip(ship, cells) {
     ship.placed = true;
     ship.cells = cells;
+    const orient = cells.length < 2 || cells[0].r === cells[1].r ? 'H' : 'V';
+    const sorted = orient === 'H'
+      ? [...cells].sort((a, b) => a.c - b.c)
+      : [...cells].sort((a, b) => a.r - b.r);
     cells.forEach(({ r, c }) => {
       this.placement.occupied.set(`${r},${c}`, ship.name);
       const el = this.own.at(r, c);
       el.classList.add('ship');
       el.dataset.ship = ship.name;
+      el.dataset.shipType = ship.name.toLowerCase().replace(/\s+/g, '-');
+      el.dataset.shipOrient = orient;
+      const idx = sorted.findIndex(s => s.r === r && s.c === c);
+      if (idx === 0) el.dataset.shipSeg = 'bow';
+      else if (idx === sorted.length - 1) el.dataset.shipSeg = 'stern';
+      else el.dataset.shipSeg = 'mid';
     });
+    this._addShipOverlay(ship, sorted, orient);
   }
 
   _removeShipCells(ship) {
@@ -257,7 +387,35 @@ export class BattleshipUI {
       const el = this.own.at(r, c);
       el.classList.remove('ship');
       delete el.dataset.ship;
+      delete el.dataset.shipType;
+      delete el.dataset.shipOrient;
+      delete el.dataset.shipSeg;
     });
+    this._removeShipOverlay(ship);
+  }
+
+  // Add SVG ship silhouette overlay positioned on the grid.
+  _addShipOverlay(ship, sorted, orient) {
+    this._removeShipOverlay(ship);
+    const shipType = ship.name.toLowerCase().replace(/\s+/g, '-');
+    const svg = createShipSVG(shipType, orient, ship.size);
+    if (!svg) return;
+    svg.dataset.overlayFor = ship.name;
+    // Position using CSS grid placement (row+2, col+2 accounts for header row/col)
+    const anchor = sorted[0];
+    if (orient === 'H') {
+      svg.style.gridRow = `${anchor.r + 2} / ${anchor.r + 3}`;
+      svg.style.gridColumn = `${anchor.c + 2} / ${anchor.c + ship.size + 2}`;
+    } else {
+      svg.style.gridRow = `${anchor.r + 2} / ${anchor.r + ship.size + 2}`;
+      svg.style.gridColumn = `${anchor.c + 2} / ${anchor.c + 3}`;
+    }
+    this.own.grid.appendChild(svg);
+  }
+
+  _removeShipOverlay(ship) {
+    const existing = this.own.grid.querySelector(`[data-overlay-for="${ship.name}"]`);
+    if (existing) existing.remove();
   }
 
   _shipOrient(ship) {
@@ -392,6 +550,7 @@ export class BattleshipUI {
   _resetPlacement() {
     this.placement.occupied.clear();
     this.placement.ships.forEach((s) => {
+      this._removeShipOverlay(s);
       s.placed = false;
       s.cells = [];
       s.pivot = null;
@@ -401,6 +560,9 @@ export class BattleshipUI {
     this.own.cells.forEach((c) => {
       c.classList.remove('ship');
       delete c.dataset.ship;
+      delete c.dataset.shipType;
+      delete c.dataset.shipOrient;
+      delete c.dataset.shipSeg;
     });
     this._renderFleetList();
     this._renderShipIcons();
@@ -434,12 +596,23 @@ export class BattleshipUI {
           ship.cells = cells;
           ship.pivot = { r, c };
           ship.facing = horiz ? 0 : 1;
+          const orient = horiz ? 'H' : 'V';
+          const sorted = orient === 'H'
+            ? [...cells].sort((a, b) => a.c - b.c)
+            : [...cells].sort((a, b) => a.r - b.r);
           cells.forEach(({ r: rr, c: cc }) => {
             occ.set(`${rr},${cc}`, ship.name);
             const el = this.own.at(rr, cc);
             el.classList.add('ship');
             el.dataset.ship = ship.name;
+            el.dataset.shipType = ship.name.toLowerCase().replace(/\s+/g, '-');
+            el.dataset.shipOrient = orient;
+            const idx = sorted.findIndex(s => s.r === rr && s.c === cc);
+            if (idx === 0) el.dataset.shipSeg = 'bow';
+            else if (idx === sorted.length - 1) el.dataset.shipSeg = 'stern';
+            else el.dataset.shipSeg = 'mid';
           });
+          this._addShipOverlay(ship, sorted, orient);
           placed = true;
         }
       }
