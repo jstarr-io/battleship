@@ -124,41 +124,66 @@ URL=http://localhost:3100 python sockettest.py
 ## How Devin Was Used
 
 This project was built and maintained using [Devin](https://devin.ai), an
-autonomous AI software engineer by Cognition AI. Both Devin Cloud (remote
-sessions) and Devin's local capabilities were used throughout development.
+autonomous AI software engineer by Cognition AI. Two modes were used:
 
-### Development Workflow
+- **Devin Cloud** — Remote sessions on Devin's hosted VMs with full browser,
+  terminal, and file system access. Used for heavy implementation, testing,
+  and deployment work.
+- **Devin Local** — In-editor AI assistant for quick iterations, real-time
+  bug reports, and conversational direction during active development.
 
-- **Initial build** — Devin wrote the entire codebase from scratch: server-side
-  game logic, A.I. opponent, Socket.IO matchmaking, client-side UI, canvas
-  animations, Web Audio synthesis, and the entry gate challenge.
-- **Feature implementation** — Each feature request from the user (ship
-  rotation, dynamite explosions, online queue fallback, flag rendering, etc.)
-  was implemented by Devin in a separate branch with a documented PR.
-- **Backend migration** — Devin migrated the entire backend from Node.js
-  (Express + Socket.IO) to Python (Flask + Flask-SocketIO) while preserving
-  the exact same Socket.IO event protocol so the client required zero changes.
-- **UI redesign** — Devin researched Anduril's website design language, then
-  implemented a complete visual overhaul (pure black, Inter font, uppercase
-  typography, 0 border-radius, no glass-morphism) as a review-first PR.
-- **Deployment** — Devin created the Railway project, configured the build
-  pipeline, set environment variables, generated the public domain, and
-  verified the live deployment — all via Railway's GraphQL API.
+### Devin Cloud (Remote Sessions)
 
-### Bug Discovery & Fixing
+Devin Cloud handled the heavy lifting — tasks that required a full development
+environment, browser interaction, and long-running processes:
 
-- **Manual playtesting** — Devin played through the game end-to-end (entry
-  gate, country select, placement, battle, game-over) acting as a human user
-  to find bugs the user might miss.
-- **Devin Review** — An automated code-review bot that runs on every PR. It
-  found BUG-007 (anthem couldn't be stopped) and BUG-008 (event listener
-  accumulation) which Devin then verified in code and fixed.
-- **Security audit** — Devin audited the server code and found two exploitable
-  DoS vectors (SECURITY-001: malformed payload crash, SECURITY-002: unbounded
+- **Initial build** — Wrote the entire codebase from scratch in a Cloud
+  session: server-side game logic, A.I. opponent, Socket.IO matchmaking,
+  client-side UI, HTML5 Canvas animations, Web Audio synthesis, and the
+  entry gate fog-wipe challenge.
+- **Backend migration** — Migrated the entire backend from Node.js
+  (Express + Socket.IO) to Python (Flask + Flask-SocketIO) in a single
+  session, preserving the exact Socket.IO event protocol so the client
+  required zero changes.
+- **UI redesign** — Researched Anduril's website design language by browsing
+  anduril.com in the Cloud VM's browser, then implemented a complete visual
+  overhaul (pure black, Inter font, uppercase typography, 0 border-radius).
+- **Ship silhouettes** — Redesigned ship graphics from colored dots to SVG
+  top-down naval vessel outlines (pointed bows, gun turrets, flight decks,
+  conning towers) with 360-degree rotation support.
+- **End-to-end playtesting** — Played through the full game in the Cloud VM's
+  browser (entry gate, country select, placement, battle, game-over) to find
+  bugs a human tester might miss — with screen recordings as evidence.
+- **Deployment** — Created the Railway project, configured the build pipeline,
+  set environment variables, generated the public domain, and verified the
+  live deployment — all via Railway's GraphQL API from the Cloud VM.
+- **Security audit** — Audited the server code and found two exploitable DoS
+  vectors (SECURITY-001: malformed payload crash, SECURITY-002: unbounded
   game creation) plus missing HTTP security headers (SECURITY-003).
-- **User-reported bugs** — The user reported bugs during live testing (duplicate
-  ship placement, flag rendering, queue stuck forever, etc.) and Devin
-  diagnosed root causes, implemented fixes, and documented each one.
+- **Devin Review** — An automated code-review bot that runs on every PR in
+  Cloud. Found BUG-007 (anthem couldn't be stopped) and BUG-008 (event
+  listener accumulation), plus a stale turn-indicator regression in the
+  turn-transitions PR.
+
+### Devin Local (In-Editor Assistant)
+
+Devin Local was used for rapid iteration cycles where the user tested the live
+game and reported issues in real time:
+
+- **Live bug reporting** — The user played the game via a Cloudflare tunnel
+  and reported bugs conversationally ("the rotate icon can only flip one
+  dimensionally", "flag icon does not have the flag symbols"). Devin Local
+  received these reports and kicked off fixes immediately.
+- **Feature requests** — Quick feature additions directed through chat:
+  per-ship rotate icons (CHANGE-001), 360-degree rotation (CHANGE-002),
+  whole-ship dynamite explosions (CHANGE-003), online queue A.I. fallback
+  (BUG-006).
+- **Design direction** — The user shared reference images and website links
+  (Anduril's site, classic Battleship game pieces) through Devin Local,
+  which informed the implementation done in Cloud sessions.
+- **PR review workflow** — The user reviewed PRs and gave feedback ("ships
+  do not look like ships, they are colored blobs") through Local, triggering
+  targeted fixes in Cloud.
 
 ### PR & Documentation Workflow
 
@@ -166,7 +191,7 @@ Every change follows a structured process:
 1. Branch off `main` with a descriptive branch name
 2. Implement + test locally (selftest, sockettest, browser verification)
 3. Open a PR with a detailed description
-4. Devin Review runs automatically and flags potential issues
+4. Devin Review runs automatically in Cloud and flags potential issues
 5. Fix any findings, then merge to `main` (auto-deploys to Railway)
 6. Log the bug/change in `debug-log/` with: bug, root cause, fix, outcome
 
