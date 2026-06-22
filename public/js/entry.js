@@ -33,20 +33,19 @@ export function initEntry(onPass) {
   // Paint the fog of war.
   function paintFog() {
     ctx.globalCompositeOperation = 'source-over';
-    const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    grd.addColorStop(0, '#10171c');
-    grd.addColorStop(1, '#1d2630');
-    ctx.fillStyle = grd;
+    ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // texture flecks
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
-    for (let i = 0; i < 400; i++) {
-      ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
+    // subtle noise
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    for (let i = 0; i < 200; i++) {
+      ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
     }
-    ctx.fillStyle = 'rgba(180,160,120,0.65)';
-    ctx.font = '20px "Special Elite", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '500 12px "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif';
     ctx.textAlign = 'center';
+    ctx.letterSpacing = '6px';
     ctx.fillText('CLASSIFIED', canvas.width / 2, canvas.height / 2 - 10);
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.fillText('— wipe to reveal —', canvas.width / 2, canvas.height / 2 + 20);
   }
   paintFog();
