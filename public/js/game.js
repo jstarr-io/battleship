@@ -134,12 +134,18 @@ function makeGrid(hostId) {
   const grid = document.createElement('div');
   grid.className = 'grid';
 
-  // corner
-  grid.appendChild(cell('grid-corner'));
+  // corner — explicit grid placement prevents ship SVG overlays from
+  // displacing auto-placed items (they occupy gridRow/gridColumn too).
+  const corner = cell('grid-corner');
+  corner.style.gridRow = '1';
+  corner.style.gridColumn = '1';
+  grid.appendChild(corner);
   // column headers 1..10
   for (let c = 0; c < SIZE; c++) {
     const h = cell('grid-head');
     h.textContent = c + 1;
+    h.style.gridRow = '1';
+    h.style.gridColumn = `${c + 2}`;
     grid.appendChild(h);
   }
   // rows
@@ -147,11 +153,15 @@ function makeGrid(hostId) {
   for (let r = 0; r < SIZE; r++) {
     const rh = cell('grid-head');
     rh.textContent = ROW_LABELS[r];
+    rh.style.gridRow = `${r + 2}`;
+    rh.style.gridColumn = '1';
     grid.appendChild(rh);
     for (let c = 0; c < SIZE; c++) {
       const cl = cell('grid-cell');
       cl.dataset.r = r;
       cl.dataset.c = c;
+      cl.style.gridRow = `${r + 2}`;
+      cl.style.gridColumn = `${c + 2}`;
       grid.appendChild(cl);
       cells.push(cl);
     }
