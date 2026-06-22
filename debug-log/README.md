@@ -31,3 +31,4 @@ Each entry uses this format:
 | CHANGE-006 | Glass-morphism UI overhaul (frosted panels, modern palette) | Jesse | Done |
 | BUG-009 | Ships look like colored blobs, not actual ships | Jesse | Fixed |
 | CHANGE-007 | Animated turn transitions + polished status bar | Jesse | Done |
+| BUG-010 | Grid row labels displaced by ship SVG overlays | Jesse | Fixed |
