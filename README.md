@@ -123,77 +123,24 @@ URL=http://localhost:3100 python sockettest.py
 
 ## How Devin Was Used
 
-This project was built and maintained using [Devin](https://devin.ai), an
-autonomous AI software engineer by Cognition AI. Two modes were used:
+This project was built using AI-assisted development tools:
 
-- **Devin Cloud** — Remote sessions on Devin's hosted VMs with full browser,
-  terminal, and file system access. Used for heavy implementation, testing,
-  and deployment work.
-- **Devin Local** — In-editor AI assistant for quick iterations, real-time
-  bug reports, and conversational direction during active development.
+**Devin Cloud** was used for major implementation and infrastructure work:
+- Build the full-stack codebase from scratch (Flask server, game engine, A.I. opponent, client UI, Canvas animations, Web Audio synthesis)
+- Migrate the backend from Node.js to Python (Flask + Flask-SocketIO)
+- Implement the Anduril-inspired UI redesign and SVG ship silhouettes
+- Run end-to-end playtesting in a headless browser with screen recordings
+- Deploy to Railway via the GraphQL API (project creation, domain setup, env config)
+- Conduct a security audit (found and fixed DoS vectors + missing HTTP headers)
+- Automated code review via Devin Review on every PR
 
-### Devin Cloud (Remote Sessions)
+**Devin Local** was used for rapid iteration and real-time collaboration:
+- Receive and triage live bug reports during user playtesting sessions
+- Implement quick feature additions (rotate icons, explosions, queue fallback)
+- Translate design direction (reference images, Anduril's site) into implementation tasks
+- Coordinate PR review feedback and trigger targeted fixes
 
-Devin Cloud handled the heavy lifting — tasks that required a full development
-environment, browser interaction, and long-running processes:
-
-- **Initial build** — Wrote the entire codebase from scratch in a Cloud
-  session: server-side game logic, A.I. opponent, Socket.IO matchmaking,
-  client-side UI, HTML5 Canvas animations, Web Audio synthesis, and the
-  entry gate fog-wipe challenge.
-- **Backend migration** — Migrated the entire backend from Node.js
-  (Express + Socket.IO) to Python (Flask + Flask-SocketIO) in a single
-  session, preserving the exact Socket.IO event protocol so the client
-  required zero changes.
-- **UI redesign** — Researched Anduril's website design language by browsing
-  anduril.com in the Cloud VM's browser, then implemented a complete visual
-  overhaul (pure black, Inter font, uppercase typography, 0 border-radius).
-- **Ship silhouettes** — Redesigned ship graphics from colored dots to SVG
-  top-down naval vessel outlines (pointed bows, gun turrets, flight decks,
-  conning towers) with 360-degree rotation support.
-- **End-to-end playtesting** — Played through the full game in the Cloud VM's
-  browser (entry gate, country select, placement, battle, game-over) to find
-  bugs a human tester might miss — with screen recordings as evidence.
-- **Deployment** — Created the Railway project, configured the build pipeline,
-  set environment variables, generated the public domain, and verified the
-  live deployment — all via Railway's GraphQL API from the Cloud VM.
-- **Security audit** — Audited the server code and found two exploitable DoS
-  vectors (SECURITY-001: malformed payload crash, SECURITY-002: unbounded
-  game creation) plus missing HTTP security headers (SECURITY-003).
-- **Devin Review** — An automated code-review bot that runs on every PR in
-  Cloud. Found BUG-007 (anthem couldn't be stopped) and BUG-008 (event
-  listener accumulation), plus a stale turn-indicator regression in the
-  turn-transitions PR.
-
-### Devin Local (In-Editor Assistant)
-
-Devin Local was used for rapid iteration cycles where the user tested the live
-game and reported issues in real time:
-
-- **Live bug reporting** — The user played the game via a Cloudflare tunnel
-  and reported bugs conversationally ("the rotate icon can only flip one
-  dimensionally", "flag icon does not have the flag symbols"). Devin Local
-  received these reports and kicked off fixes immediately.
-- **Feature requests** — Quick feature additions directed through chat:
-  per-ship rotate icons (CHANGE-001), 360-degree rotation (CHANGE-002),
-  whole-ship dynamite explosions (CHANGE-003), online queue A.I. fallback
-  (BUG-006).
-- **Design direction** — The user shared reference images and website links
-  (Anduril's site, classic Battleship game pieces) through Devin Local,
-  which informed the implementation done in Cloud sessions.
-- **PR review workflow** — The user reviewed PRs and gave feedback ("ships
-  do not look like ships, they are colored blobs") through Local, triggering
-  targeted fixes in Cloud.
-
-### PR & Documentation Workflow
-
-Every change follows a structured process:
-1. Branch off `main` with a descriptive branch name
-2. Implement + test locally (selftest, sockettest, browser verification)
-3. Open a PR with a detailed description
-4. Devin Review runs automatically in Cloud and flags potential issues
-5. Fix any findings, then merge to `main` (auto-deploys to Railway)
-6. Log the bug/change in `debug-log/` with: bug, root cause, fix, outcome
+Both modes enabled rapid prototyping and iteration on game mechanics. AI assistance helped maintain consistent code architecture, thorough documentation, and a structured PR workflow throughout.
 
 ---
 
