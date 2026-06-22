@@ -236,91 +236,25 @@ Full details and the index table are in
 
 ## Architecture & Structure
 
-```
-battleship/
-├── app.py                  # Flask server + Flask-SocketIO event handlers
-│                           #   - Static file serving
-│                           #   - Socket.IO matchmaking & game relay
-│                           #   - Security headers (CSP, X-Frame-Options, etc.)
-│                           #   - Defensive event wrapper (prevents malformed payload crashes)
-│
-├── game.py                 # Authoritative game state & rule engine
-│                           #   - Board setup, ship placement validation
-│                           #   - Fire resolution (hit/miss/sunk)
-│                           #   - Anti-cheat: ship positions hidden until sunk
-│                           #   - Turn management
-│
-├── ai.py                   # A.I. opponent
-│                           #   - Random valid fleet placement
-│                           #   - Hunt/target firing strategy
-│
-├── public/                 # Static client files (served by Flask)
-│   ├── index.html          # Single-page app shell (all screens in one HTML file)
-│   ├── css/
-│   │   └── styles.css      # Anduril-inspired design system
-│   │                       #   Pure black #000, Inter font, uppercase, 0 border-radius
-│   ├── js/
-│   │   ├── app.js          # Screen flow controller + Socket.IO protocol handler
-│   │   ├── entry.js        # Entry gate: canvas fog wipe + answer validation
-│   │   ├── game.js         # Board UI: grid rendering, ship SVG overlays,
-│   │   │                   #   placement (drag, rotate), firing, hit/miss pins,
-│   │   │                   #   dynamite explosion canvas animation
-│   │   ├── countries.js    # 29 WWI nations: flag SVG markup + anthem note sequences
-│   │   ├── over.js         # Game-over canvas scene: ocean, ships, waving flags
-│   │   └── audio.js        # Web Audio API: tone/noise synthesis, SFX, anthem player
-│   ├── assets/
-│   │   └── unclesam.jpg    # J.M. Flagg's 1917 recruiting poster
-│   └── vendor/
-│       └── socket.io.min.js  # Vendored Socket.IO client (strict CSP compliance)
-│
-├── debug-log/              # Bug & change audit trail (one file per item)
-│   ├── README.md           # Index table of all tracked items
-│   ├── BUG-001-*.md        # Bug reports (symptom, root cause, fix, outcome)
-│   ├── CHANGE-001-*.md     # Feature changes
-│   └── SECURITY-001-*.md   # Security fixes
-│
-├── selftest.py             # Headless test: rules validation + 300-game A.I. sim
-├── sockettest.py           # Integration test: two Socket.IO clients play a full game
-├── requirements.txt        # Python dependencies (Flask, Flask-SocketIO, Gunicorn, Eventlet)
-├── Procfile                # Railway/Heroku start command
-├── railway.toml            # Railway build & deploy config (Nixpacks)
-└── LICENSE
-```
+| Component | File(s) | Role |
+|-----------|---------|------|
+| **Server** | `app.py` | Flask + Flask-SocketIO — static hosting, matchmaking, game relay, security headers |
+| **Game engine** | `game.py` | Server-authoritative rules, placement validation, fire resolution, anti-cheat |
+| **A.I. opponent** | `ai.py` | Random fleet placement + hunt/target firing strategy |
+| **Client shell** | `public/index.html` | Single-page app — all screens as `<section>` elements toggled by JS |
+| **Screen flow** | `public/js/app.js` | Screen state machine + Socket.IO protocol handler |
+| **Board UI** | `public/js/game.js` | Grid rendering, SVG ship overlays, placement/rotation, firing, explosions |
+| **Entry gate** | `public/js/entry.js` | Canvas fog wipe + answer validation |
+| **Nations** | `public/js/countries.js` | 29 WWI flags (SVG) + anthem note sequences |
+| **Game over** | `public/js/over.js` | Canvas ocean scene with sailing/sinking ships and waving flags |
+| **Audio** | `public/js/audio.js` | Web Audio API — all SFX and anthems synthesized, no audio files |
+| **Styles** | `public/css/styles.css` | Anduril-inspired design system (black, Inter, uppercase, 0 radius) |
+| **Bug log** | `debug-log/` | One file per bug/change/security fix with root cause and outcome |
 
-### Data Flow
-
-```
-Browser (vanilla JS)                    Server (Python/Flask)
-─────────────────────                   ─────────────────────
-  app.js                                  app.py
-    ├── entry.js (fog gate)                 ├── on('playAI')  → new Game + AI
-    ├── game.js  (board UI)                 ├── on('findGame') → matchmaking queue
-    ├── over.js  (end scene)                │     └── 8s timeout → AI fallback
-    └── audio.js (SFX)                      ├── on('deploy')  → validate placement
-                                            ├── on('fire')    → game.fire()
-    Socket.IO ◄─────────────────────►       │     └── emit result + turn
-                                            └── game.py (rules engine)
-                                                  └── ai.py (opponent logic)
-```
-
-### Key Design Decisions
-
-- **Server-authoritative** — All game logic runs on the server. The client
-  sends intents (`fire`, `deploy`); the server validates and responds with
-  results. Enemy ship positions are never leaked to the client.
-- **Single-process with in-memory state** — Games live in a Python dict keyed
-  by socket ID. This keeps the architecture simple but means the app runs as a
-  single Gunicorn worker (no horizontal scaling). Suitable for the current
-  player base.
-- **No framework on the client** — Vanilla JS with ES modules keeps the bundle
-  at zero build steps. Each screen is a `<section>` toggled via CSS; `app.js`
-  manages the screen state machine.
-- **Synthesized audio** — All sounds (gunfire, explosions, splashes, anthems)
-  are generated in real-time via the Web Audio API. No audio files to load or
-  license.
-- **Vendored Socket.IO client** — The browser client is served from
-  `public/vendor/` instead of a CDN, allowing a strict `script-src 'self'` CSP
-  with no exceptions.
+All game logic is **server-authoritative** — the client sends intents (`fire`,
+`deploy`), the server validates and responds. Enemy ship positions are never
+sent to the client until sunk. State is held in-memory (single Gunicorn worker,
+no database).
 
 ---
 
