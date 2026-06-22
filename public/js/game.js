@@ -594,13 +594,13 @@ export class BattleshipUI {
 
   _announce(text, bad = false) {
     const ind = document.getElementById('turn-indicator');
-    const prev = ind.textContent;
-    const prevClass = ind.className;
     ind.textContent = text;
     ind.className = 'turn-indicator ' + (bad ? 'flash-bad' : 'flash-good');
     setTimeout(() => {
-      ind.className = prevClass;
-      ind.textContent = prev;
+      // Re-derive from current turn state rather than a stale snapshot —
+      // setTurn may have run during the announce and changed the turn.
+      ind.textContent = this.myTurn ? 'YOUR MOVE — FIRE!' : "ENEMY'S MOVE…";
+      ind.className = 'turn-indicator ' + (this.myTurn ? 'active' : 'waiting');
     }, 1400);
   }
 
